@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vespera Search Suite — SOC Dashboard</title>
+<link href="https://cdn.tailwindcss.com" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body class="dark">
+<div class="app-shell">
+
+  <!-- ================= HEADER ================= -->
+  <header class="header">
+    <div class="brand" id="brand">🔍 <span>VESPERA</span><span class="accent">SEARCH</span> <span class="accent">SUITE</span></div>
+    <div class="status-pill" id="status-pill">
+      <span class="dot"></span><span id="status-text">Онлайн</span>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="icon-btn" id="terminal-open" title="Терминал">⌨</button>
+      <button type="button" class="icon-btn" id="ai-open" title="AI Copilot">🤖</button>
+      <button type="button" class="icon-btn" id="theme-toggle" title="Тема">🌙</button>
+      <button type="button" class="btn-ghost" id="history-toggle">История</button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <section class="search-panel">
+
+      <h1 class="hero">VESPERA SEARCH SUITE</h1>
+      <p class="hero-sub">OSINT-инструмент: поиск по username, email, телефонам, соцсетям и фото по публичным источникам. Полный переписанный фронтенд SOC-дашборда.</p>
+
+      <!-- Примеры поиска (на пустом состоянии) -->
+      <div class="examples" id="examples" hidden>
+        <button type="button" class="example-chip" data-chip="username" data-value="ray228a">👤 ray228a (username)</button>
+        <button type="button" class="example-chip" data-chip="email" data-value="user@example.com">✉️ user@example.com (email)</button>
+        <button type="button" class="example-chip" data-chip="social" data-value="Иванов Иван, город Москва">👥 Иванов Иван (фио+город)</button>
+        <button type="button" class="example-chip" data-chip="phone" data-value="+79001234567">📞 +79001234567</button>
+      </div>
+
+      <!-- Форма поиска -->
+      <form id="search-form" class="search-form" role="search">
+        <div class="search-box" id="search-box">
+          <!-- Чипы-табы: тип поиска -->
+          <div class="chips" id="chips" role="tablist" aria-label="Тип поиска"></div>
+
+          <!-- Динамическое поле ввода -->
+          <div class="input-area" id="input-area"></div>
+
+          <!-- Прогресс-сканер -->
+          <div class="progress-row" id="progress-row" hidden>
+            <div class="scanner-line"></div>
+            <div class="progress-text" id="progress-text">Сканируем источники…</div>
+          </div>
+
+          <div class="search-row">
+            <button type="submit" id="search-btn" class="btn-primary" disabled>
+              <span id="btn-icon">🔎</span><span id="btn-text">Искать</span>
+            </button>
+            <button type="button" id="stop-btn" class="btn-danger" hidden>🛑 Остановить</button>
+          </div>
+
+          <div class="error-banner" id="search-error" role="alert" hidden></div>
+        </div>
+      </form>
+
+      <!-- Терминал (live-лог в реальном времени) -->
+      <div class="terminal-panel" id="terminal" hidden>
+        <div class="terminal-titlebar">
+          <span class="terminal-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+          <span class="terminal-title">VESPERA — LIVE LOG</span>
+          <span class="terminal-status" id="terminal-status">connected</span>
+        </div>
+        <div class="terminal-body" id="terminal-lines"></div>
+      </div>
+
+      <!-- Результаты -->
+      <section class="results-section" id="results">
+        <div class="results-toolbar" id="results-toolbar" hidden>
+          <div class="results-summary" id="summary-text"></div>
+          <div class="results-actions">
+            <button type="button" class="btn-outline" data-export="json">⬇ JSON</button>
+            <button type="button" class="btn-outline" data-export="csv">⬇ CSV</button>
+            <button type="button" class="btn-outline" id="rerun-btn" hidden>🔁 Повторить</button>
+          </div>
+        </div>
+        <div class="skeleton-grid" id="skeletons"></div>
+        <div id="results-grid" class="results-grid"></div>
+        <div id="empty-state" class="empty-state" hidden>
+          <div class="empty-icon">🗃</div>
+          <h2 class="empty-title">По запросу ничего не найдено</h2>
+          <p class="empty-text">Спробуйте изменить запрос: сократите ФИО, исправьте формат номера или выберите другой тип поиска.</p>
+        </div>
+      </section>
+
+    </section>
+  </main>
+
+  <!-- ================= HISTORY MODAL ================= -->
+  <div class="history-modal" id="history-modal" hidden role="dialog" aria-modal="true">
+    <div class="history-panel">
+      <div class="history-header">
+        <h3>История поисков</h3>
+        <button type="button" class="icon-btn" id="history-close">✕</button>
+      </div>
+      <div class="history-actions">
+        <button type="button" class="btn-ghost" id="history-clear">🗑 Очистить</button>
+      </div>
+      <ul class="history-list" id="history-list"></ul>
+    </div>
+  </div>
+
+  <!-- ================= PTY TERMINAL ================= -->
+  <div class="pty-panel" id="pty-panel" hidden>
+    <div class="pty-titlebar">
+      <span class="pty-dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+      <span class="pty-title">⌨ Терминал</span>
+      <span class="pty-status" id="pty-status">Терминал готов</span>
+      <button type="button" class="icon-btn" id="pty-close">✕</button>
+    </div>
+    <div id="xterm-root"></div>
+  </div>
+
+  <!-- ================= AI COPILOT ================= -->
+  <div class="ai-panel" id="ai-panel" hidden>
+    <div class="ai-titlebar">
+      <span class="ai-title">🤖 AI Copilot — Vespera</span>
+      <button type="button" class="icon-btn" id="ai-close">✕</button>
+    </div>
+    <div id="ai-messages"></div>
+    <div class="ai-input">
+      <input type="text" id="ai-input" placeholder="Опишите проблему (модули, ошибки, логи)…" autocomplete="off" />
+      <button type="button" class="btn-primary" id="ai-send">Отправить</button>
+    </div>
+  </div>
+
+  <!-- ================= TOASTS ================= -->
+  <div class="toasts" id="toasts"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <span>Vespera Search Suite — OSINT Dashboard · <span id="uptime" class="footer-accent">● онлайн</span></span>
+    <span class="footer-muted">Используйте только в хороших целях. Доксинг и вред другим запрещён.</span>
+  </footer>
+</div>
+
+<script src="/search.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
