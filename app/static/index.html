@@ -7,6 +7,9 @@
 <link href="https://cdn.tailwindcss.com" rel="stylesheet" />
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/style.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5/css/xterm.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/xterm@5/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 </head>
 <body class="dark">
 <div class="app-shell">
@@ -88,6 +91,7 @@
         </div>
         <div class="skeleton-grid" id="skeletons"></div>
         <div id="results-grid" class="results-grid"></div>
+        <div id="cy" class="graph-canvas"></div>
         <div id="empty-state" class="empty-state" hidden>
           <div class="empty-icon">🗃</div>
           <h2 class="empty-title">По запросу ничего не найдено</h2>

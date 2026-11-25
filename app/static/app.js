@@ -361,6 +361,41 @@ function renderResults(result) {
   $("summary-text").textContent = parts.join(" · ");
   $("results-toolbar").hidden = false;
   $("empty-state").hidden = true;
+  renderGraph(result);
+}
+
+function renderGraph(result) {
+  const container = $("cy");
+  if (!container) return;
+  if (typeof cytoscape === "undefined") { toast("Cytoscape не загружен", true); return; }
+  const gd = result.graph_data || { nodes: [], edges: [] };
+  if (gd.nodes.length < 2) { container.hidden = true; return; }
+  container.hidden = false;
+  try {
+    const cy = cytoscape({
+      container,
+      elements: { nodes: gd.nodes, edges: gd.edges },
+      style: [
+        { selector: "node", style: {
+          backgroundColor: "#334155", color: "#fff", fontSize: 11, label: "data(label)",
+          width: 44, height: 32, borderWidth: 1, borderColor: "#fff",
+          textValign: "top", textHAlign: "center"
+        }},
+        { selector: "node[type='query']", style: { width: 60, backgroundColor: "#3b82f4", label: "" } },
+        { selector: "node[type='category']", style: { backgroundColor: "#10b981", width: 40 } },
+        { selector: "edge", style: { lineColor: "#475569", width: 1.2, targetArrowShape: "triangle", targetArrowColor: "#475569" } },
+      ],
+      layout: { name: "breadthfirst", directed: true, roots: "#root", padding: 6, spacingFactor: 1.5 },
+    });
+    cy.on("tap", "node", (evt) => {
+      const url = evt.target.data("url");
+      if (url) window.open(url, "_blank");
+    });
+    toast(`Граф: ${gd.nodes.length} узлов, ${gd.edges.length} связей`);
+  } catch (e) {
+    container.hidden = true;
+    toast("Ошибка графа: " + e.message, true);
+  }
 }
 
 function renderKeyInfo(keyInfo) {

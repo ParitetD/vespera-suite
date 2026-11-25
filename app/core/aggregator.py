@@ -80,6 +80,31 @@ def _extract_key_info(query: Dict[str, Any], grouped: Dict[str, List[Dict[str, A
     return out[:4]
 
 
+def _build_graph_data(query: Dict[str, Any], grouped: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+    """Граф для Cytoscape: корень — запрос, узлы результатов по типам (dagre, LR)."""
+    nodes = [{"data": {"id": "root", "label": query.get("value", ""), "type": "query"}}]
+    edges = []
+    for type_key, items in grouped.items():
+        if not items:
+            continue
+        cat_id = f"cat_{type_key}"
+        nodes.append({"data": {"id": cat_id, "label": type_key.upper(), "type": "category"}})
+        edges.append({"data": {"source": "root", "target": cat_id}})
+        for idx, item in enumerate(items[:20]):
+            node_id = f"{type_key}_{idx}_{hash(item.get('url') or item.get('title') or '') % 100000}"
+            nodes.append({
+                "data": {
+                    "id": node_id,
+                    "label": (item.get("title") or item.get("source") or type_key)[:40],
+                    "type": "profile",
+                    "url": item.get("url"),
+                    "confidence": item.get("confidence"),
+                }
+            })
+            edges.append({"data": {"source": cat_id, "target": node_id}})
+    return {"nodes": nodes, "edges": edges}
+
+
 class Aggregator:
     def aggregate(self, query: Dict[str, Any], module_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         grouped: Dict[str, List[Dict[str, Any]]] = {key: [] for key in RESULT_KEYS}
@@ -107,6 +132,7 @@ class Aggregator:
             "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "query": {"type": query.get("type", ""), "value": query.get("value", "")},
             "key_info": _extract_key_info(query, grouped),
+            "graph_data": _build_graph_data(query, grouped),
             "results": grouped,
             "errors": errors,
             "summary": summary,
